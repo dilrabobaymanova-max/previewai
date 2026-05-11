@@ -9,18 +9,25 @@ import random
 from werkzeug.utils import secure_filename
 import replicate
 from openai import OpenAI
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = "previewai_secret_key_2026"
 CORS(app)
 
-UPLOAD_FOLDER = 'static/uploads'
-FURNITURE_FOLDER = 'static/furniture'
-RECEIPTS_FOLDER = 'static/receipts'
-VIDEOS_FOLDER = 'videos'
-for folder in [UPLOAD_FOLDER, FURNITURE_FOLDER, RECEIPTS_FOLDER, VIDEOS_FOLDER]:
-    os.makedirs(folder, exist_ok=True)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# Cloudinary konfiguratsiya
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME", "dmncogeyg"),
+    api_key=os.getenv("CLOUDINARY_API_KEY", "618817753823674"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET", "y_0LFg_mOXk6sc9wOIYAO98F-Hs"),
+    secure=True
+)
+
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 USERS_FILE = 'users.json'
@@ -89,10 +96,7 @@ def ai_ask(text):
 def index():
     return render_template('index.html')
 
-@app.route('/videos/<path:filename>')
-def serve_video(filename):
-    from flask import send_from_directory
-    return send_from_directory(VIDEOS_FOLDER, filename)
+# Video endi Cloudinary'dan to'g'ridan-to'g'ri yuklanadi (route kerak emas)
 
 @app.route('/check_session')
 def check_session():
@@ -382,10 +386,13 @@ def add_furniture():
         return jsonify({'success': False, 'message': 'Unauthorized'})
     try:
         image = request.files['image']
-        filename = str(uuid.uuid4()) + '_' + secure_filename(image.filename)
-        image_path = os.path.join(FURNITURE_FOLDER, filename)
-        image.save(image_path)
         furniture_id = str(uuid.uuid4())
+        upload_result = cloudinary.uploader.upload(
+            image,
+            public_id=f"previewai/furniture/{furniture_id}",
+            folder="previewai/furniture"
+        )
+        image_url = upload_result["secure_url"]
         furniture = {
             'id': furniture_id,
             'name': request.form.get('name'),
@@ -396,7 +403,8 @@ def add_furniture():
             'size': request.form.get('size'),
             'price': float(request.form.get('price', 0)),
             'seller': session['username'],
-            'image_path': f'/static/furniture/{filename}',
+            'image_path': image_url,
+            'cloudinary_id': f"previewai/furniture/{furniture_id}",
             'status': 'available'
         }
         furniture_data = load_json(FURNITURE_FILE, {})
@@ -426,9 +434,13 @@ def delete_furniture(fid):
         return jsonify({'success': False})
     furniture = load_json(FURNITURE_FILE, {})
     if fid in furniture and furniture[fid]['seller'] == session['username']:
-        img_path = furniture[fid]['image_path'].replace('/static/', 'static/')
-        if os.path.exists(img_path):
-            os.remove(img_path)
+        # Cloudinary'dan rasmni o'chirish
+        cloudinary_id = furniture[fid].get('cloudinary_id')
+        if cloudinary_id:
+            try:
+                cloudinary.uploader.destroy(cloudinary_id)
+            except Exception:
+                pass
         del furniture[fid]
         save_json(FURNITURE_FILE, furniture)
         return jsonify({'success': True})
@@ -482,22 +494,28 @@ Hech qanday izoh yozmang."""
 def generate_preview():
     try:
         data = request.json
-        room_image_path = data.get('room_image_path')
+        room_image_url = data.get('room_image_path')
         furniture_ids = data.get('furniture_ids', [])
-        if not room_image_path or not furniture_ids:
+        if not room_image_url or not furniture_ids:
             return jsonify({'success': False, 'message': "Ma'lumot yetishmayapti"})
-        room_full = room_image_path.lstrip('/')
-        if not os.path.exists(room_full):
+        # Cloudinary URL dan rasmni olish
+        import requests as http_requests
+        room_resp = http_requests.get(room_image_url)
+        if room_resp.status_code != 200:
             return jsonify({'success': False, 'message': 'Xona rasmi topilmadi'})
-        room_b64 = "data:image/jpeg;base64," + base64.b64encode(open(room_full, "rb").read()).decode()
+        room_b64 = "data:image/jpeg;base64," + base64.b64encode(room_resp.content).decode()
         furniture_data = load_json(FURNITURE_FILE, {})
         furniture_images = []
         for fid in furniture_ids:
             if fid in furniture_data:
-                path = furniture_data[fid]['image_path'].lstrip('/')
-                if os.path.exists(path):
-                    img_b64 = "data:image/jpeg;base64," + base64.b64encode(open(path, "rb").read()).decode()
-                    furniture_images.append(img_b64)
+                furl = furniture_data[fid]['image_path']
+                try:
+                    fresp = http_requests.get(furl)
+                    if fresp.status_code == 200:
+                        img_b64 = "data:image/jpeg;base64," + base64.b64encode(fresp.content).decode()
+                        furniture_images.append(img_b64)
+                except Exception:
+                    pass
         if not furniture_images:
             return jsonify({'success': False, 'message': 'Mebel rasmi topilmadi'})
         prompt = "Place the exact furniture pieces from the reference images into this room photo realistically. Keep original room layout, lighting, and architectural elements. Arrange furniture harmoniously. Photorealistic quality."
@@ -512,10 +530,14 @@ def generate_preview():
                 "aspect_ratio": "16:9"
             }
         )
-        preview_path = os.path.join(UPLOAD_FOLDER, f"preview_{uuid.uuid4()}.jpg")
-        with open(preview_path, "wb") as f:
-            f.write(output.read())
-        return jsonify({'success': True, 'preview_url': f'/{preview_path}'})
+        # Natijani Cloudinary'ga yuklash
+        preview_id = f"previewai/previews/preview_{uuid.uuid4().hex}"
+        upload_result = cloudinary.uploader.upload(
+            output.read(),
+            public_id=preview_id,
+            resource_type="image"
+        )
+        return jsonify({'success': True, 'preview_url': upload_result['secure_url']})
     except Exception as e:
         print(e)
         return jsonify({'success': False, 'message': str(e)})
@@ -524,10 +546,13 @@ def generate_preview():
 def upload_room_image():
     try:
         image = request.files['image']
-        filename = str(uuid.uuid4()) + '_' + secure_filename(image.filename)
-        image_path = os.path.join(UPLOAD_FOLDER, filename)
-        image.save(image_path)
-        return jsonify({'success': True, 'image_path': f'/{image_path}'})
+        room_id = f"previewai/rooms/room_{uuid.uuid4().hex}"
+        upload_result = cloudinary.uploader.upload(
+            image,
+            public_id=room_id,
+            resource_type="image"
+        )
+        return jsonify({'success': True, 'image_path': upload_result['secure_url']})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
@@ -609,10 +634,13 @@ def upload_receipt():
         return jsonify({'success': False, 'message': "Ma'lumot yetishmayapti"})
     orders = load_json(ORDERS_FILE, {})
     if order_id in orders and orders[order_id]['buyer_username'] == session['username']:
-        ext = file.filename.rsplit('.', 1)[-1] if '.' in file.filename else 'jpg'
-        filename = f"receipt_{uuid.uuid4().hex}.{ext}"
-        file.save(os.path.join(RECEIPTS_FOLDER, filename))
-        orders[order_id]['receipt_path'] = f'/static/receipts/{filename}'
+        receipt_id = f"previewai/receipts/receipt_{uuid.uuid4().hex}"
+        upload_result = cloudinary.uploader.upload(
+            file,
+            public_id=receipt_id,
+            resource_type="image"
+        )
+        orders[order_id]['receipt_path'] = upload_result['secure_url']
         save_json(ORDERS_FILE, orders)
         add_notification('shaxzod',
             f"📄 Chek yuklandi: {orders[order_id]['furniture_name']} - {orders[order_id]['buyer_name']}",
@@ -674,4 +702,5 @@ def contact_request():
     return jsonify({'success': True, 'message': "So'rovingiz yuborildi! Tez orada siz bilan bog'lanamiz."})
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)

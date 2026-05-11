@@ -1,0 +1,9 @@
+flask
+flask-cors
+replicate
+openai
+cloudinary
+python-dotenv
+requests
+gunicorn
+werkzeug
