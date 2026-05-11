@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview AI - Xarid qilish</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/user.css">
+</head>
+<body>
+<div class="header">
+    <div class="header-inner">
+        <div class="header-logo">
+            <div class="logo-icon"><i class="fas fa-wand-magic-sparkles"></i></div>
+            <span class="logo-text">Preview AI</span>
+        </div>
+        <div class="header-nav">
+            <button class="nav-btn active" data-section="ai" onclick="showSection('ai')"><i class="fas fa-brain"></i> AI Tavsiya</button>
+            <button class="nav-btn" data-section="shop" onclick="showSection('shop')"><i class="fas fa-store"></i> Do'kon</button>
+            <button class="nav-btn" data-section="orders" onclick="showSection('orders')"><i class="fas fa-shopping-bag"></i> Buyurtmalarim</button>
+            <button class="nav-btn" data-section="notifs" onclick="showSection('notifs')"><i class="fas fa-bell"></i> Bildirishnomalar <span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+        </div>
+        <div class="header-right">
+            <div class="user-badge">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <span class="user-name" id="usernameDisplay">Foydalanuvchi</span>
+            </div>
+            <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- AI TAVSIYA -->
+    <div id="section-ai" class="section active">
+        <div class="section-card">
+            <h2><i class="fas fa-brain" style="color:var(--accent)"></i> AI yordamida mebel topish</h2>
+            <div style="display:flex;gap:2rem;flex-wrap:wrap;">
+                <div style="flex:1;min-width:250px;">
+                    <div class="form-group">
+                        <label>Xona rasmini yuklang</label>
+                        <input type="file" id="roomImage" accept="image/*" onchange="previewRoom(this)">
+                        <div id="roomPreview" style="margin-top:1rem;text-align:center;"></div>
+                    </div>
+                </div>
+                <div style="flex:2;">
+                    <div class="form-group">
+                        <label>Qanday mebel xohlaysiz? Xohishlaringizni yozing</label>
+                        <textarea id="aiPreferences" rows="3" placeholder="Masalan: 'zamonaviy kulrang divan, yorug'lik stol, yumshoq gilam'"></textarea>
+                    </div>
+                    <button class="btn-submit" onclick="getAIRecommendations()" style="width:auto;padding:0.8rem 2rem;">
+                        <i class="fas fa-magic"></i> Tavsiya olish
+                    </button>
+                </div>
+            </div>
+            <div id="aiResults" class="furniture-grid" style="margin-top:2rem;"></div>
+        </div>
+    </div>
+
+    <!-- DO'KON -->
+    <div id="section-shop" class="section">
+        <div class="section-card">
+            <div class="section-card-header">
+                <div class="section-card-title"><div class="icon pink"><i class="fas fa-couch"></i></div> Barcha mebellar</div>
+                <span class="section-card-count" id="allCount">0 ta</span>
+            </div>
+            <div id="furnitureGrid" class="furniture-grid"></div>
+        </div>
+    </div>
+
+    <!-- BUYURTMALARIM -->
+    <div id="section-orders" class="section">
+        <div class="section-card">
+            <div class="section-card-header">
+                <div class="section-card-title"><div class="icon purple"><i class="fas fa-shopping-bag"></i></div> Mening buyurtmalarim</div>
+            </div>
+            <div id="ordersContainer"></div>
+        </div>
+    </div>
+
+    <!-- BILDIRISHNOMALAR -->
+    <div id="section-notifs" class="section">
+        <div class="section-card">
+            <div class="section-card-header">
+                <div class="section-card-title"><div class="icon green"><i class="fas fa-bell"></i></div> Bildirishnomalar</div>
+            </div>
+            <div id="notifsContainer"></div>
+        </div>
+    </div>
+</div>
+
+<!-- SAVAT TUGMASI -->
+<button class="cart-toggle" onclick="toggleCart()">
+    <i class="fas fa-shopping-cart"></i>
+    <span class="cart-toggle-badge" id="cartBadge">0</span>
+</button>
+<div class="cart-overlay" id="cartOverlay" onclick="toggleCart()"></div>
+<div class="cart-panel" id="cartPanel">
+    <div class="cart-header">
+        <h3><i class="fas fa-shopping-cart"></i> Savat <span class="cart-count-badge" id="cartCount">0</span></h3>
+        <div class="cart-close" onclick="toggleCart()"><i class="fas fa-times"></i></div>
+    </div>
+    <div class="cart-items" id="cartItems"></div>
+    <div class="cart-footer">
+        <div class="cart-total">
+            <span class="cart-total-label">Jami:</span>
+            <span class="cart-total-value" id="cartTotal">0 so'm</span>
+        </div>
+        <button class="btn-buy" onclick="showBuyModal()"><i class="fas fa-credit-card"></i> Buyurtma berish</button>
+        <button class="btn-buy" style="background:var(--accent);margin-top:0.5rem;" onclick="generatePreview()"><i class="fas fa-eye"></i> Xonada ko'rish (AI)</button>
+    </div>
+</div>
+
+<!-- BUYURTMA MODAL -->
+<div class="modal-overlay" id="buyModal">
+    <div class="modal">
+        <div class="modal-close" onclick="closeModal('buyModal')"><i class="fas fa-times"></i></div>
+        <h2><i class="fas fa-credit-card"></i> Buyurtma berish</h2>
+        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1.5rem">Ma'lumotlaringizni kiriting, sotuvchi siz bilan bog'lanadi</p>
+        <div class="form-group"><label>To'liq ismingiz (FISH) *</label><input type="text" id="buyFullName"></div>
+        <div class="form-group"><label>Telefon raqamingiz *</label><input type="tel" id="buyPhone"></div>
+        <button class="btn-submit" onclick="submitOrder()"><i class="fas fa-check"></i> Tasdiqlash</button>
+    </div>
+</div>
+
+<!-- MUVAFFAQIYAT MODAL -->
+<div class="modal-overlay" id="successModal">
+    <div class="modal">
+        <div class="modal-close" onclick="closeModal('successModal')"><i class="fas fa-times"></i></div>
+        <div id="successContent"></div>
+    </div>
+</div>
+
+<!-- CHEK YUKLASH MODAL -->
+<div class="modal-overlay" id="receiptModal">
+    <div class="modal">
+        <div class="modal-close" onclick="closeModal('receiptModal')"><i class="fas fa-times"></i></div>
+        <h2><i class="fas fa-receipt"></i> Chek yuklash</h2>
+        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1.5rem">Do'kondan olgan chek rasmini yuklang va sotib olgan mebelingizning <strong style="color:var(--success)">1%</strong> cashbackini oling!</p>
+        <input type="hidden" id="receiptOrderId">
+        <div class="form-group"><label>Chek rasmi *</label><input type="file" id="receiptFile" accept="image/*,application/pdf"></div>
+        <button class="btn-submit" onclick="submitReceipt()"><i class="fas fa-upload"></i> Yuklash</button>
+    </div>
+</div>
+
+<!-- CASHBACK ALOQA MODAL -->
+<div class="modal-overlay" id="contactModal">
+    <div class="modal">
+        <div class="modal-close" onclick="closeModal('contactModal')"><i class="fas fa-times"></i></div>
+        <h2><i class="fas fa-coins"></i> Cashback olish</h2>
+        <p>Sizga <strong id="cashbackAmount" style="color:var(--success)">0</strong> so'm qaytariladi</p>
+        <p style="color:var(--text-muted);font-size:0.85rem;margin:0.5rem 0 1.5rem">Pul o'tkazish uchun telefon raqam yoki Telegram username kiriting</p>
+        <input type="hidden" id="contactOrderId">
+        <div class="form-group"><label>Telefon yoki @Telegram</label><input type="text" id="contactInfo" placeholder="+998901234567 yoki @username"></div>
+        <button class="btn-submit" onclick="submitContact()"><i class="fas fa-paper-plane"></i> Yuborish</button>
+    </div>
+</div>
+
+<!-- AI PREVIEW MODAL -->
+<div class="modal-overlay" id="previewModal">
+    <div class="modal" style="max-width:90%;text-align:center;">
+        <div class="modal-close" onclick="closeModal('previewModal')"><i class="fas fa-times"></i></div>
+        <h2><i class="fas fa-eye"></i> Xonangizdagi ko'rinishi</h2>
+        <div id="previewLoading" style="padding:2rem;display:none"><i class="fas fa-spinner fa-spin fa-2x" style="color:var(--accent)"></i><p style="margin-top:1rem;color:var(--text-muted)">AI generatsiya qilmoqda...</p></div>
+        <img id="previewImage" src="" style="max-width:100%;border-radius:16px;margin-top:1rem;" alt="Preview">
+    </div>
+</div>
+
+<script src="/static/user.js"></script>
+</body>
+</html>

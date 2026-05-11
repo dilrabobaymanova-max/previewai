@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="uz">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview AI - Sun'iy intellekt yordamida xonangizni bezang</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6C63FF;
+            --secondary: #FF6B9D;
+            --accent: #00D2FF;
+            --dark-bg: #0B0E17;
+            --card-bg: rgba(255, 255, 255, 0.04);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #FFF;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-muted: rgba(255, 255, 255, 0.45);
+            --glow-primary: rgba(108, 99, 255, 0.3);
+            --glow-secondary: rgba(255, 107, 157, 0.3);
+            --gradient-1: linear-gradient(135deg, #6C63FF, #00D2FF);
+            --gradient-2: linear-gradient(135deg, #FF6B9D, #FF8E53);
+            --gradient-3: linear-gradient(135deg, #6C63FF, #FF6B9D, #FF8E53)
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            line-height: 1.6
+        }
+
+        #particles-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.9)
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1)
+            }
+        }
+
+        @keyframes floatY {
+
+            0%,
+            100% {
+                transform: translateY(0)
+            }
+
+            50% {
+                transform: translateY(-15px)
+            }
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.8);
+                opacity: 1
+            }
+
+            100% {
+                transform: scale(2.2);
+                opacity: 0
+            }
+        }
+
+        @keyframes gradient-shift {
+            0% {
+                background-position: 0% 50%
+            }
+
+            50% {
+                background-position: 100% 50%
+            }
+
+            100% {
+                background-position: 0% 50%
+            }
+        }
+
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1)
+        }
+
+        .animate-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0)
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1rem 2rem;
+            transition: all 0.4s
+        }
+
+        .navbar.scrolled {
+            background: rgba(11, 14, 23, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--card-border);
+            padding: 0.7rem 2rem
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center
+        }
+
+        .logo {
+            font-size: 26px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: var(--gradient-1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 20px var(--glow-primary)
+        }
+
+        .logo-text {
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            position: relative
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary)
+        }
+
+        .btn-nav {
+            padding: 0.6rem 1.5rem;
+            background: var(--gradient-1);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px var(--glow-primary)
+        }
+
+        .btn-nav:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px var(--glow-primary)
+        }
+
+        .mobile-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 120px 20px 80px;
+            position: relative;
+            overflow: hidden
+        }
+
+        .hero-glow-1 {
+            position: absolute;
+            top: 10%;
+            left: -10%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--glow-primary), transparent 70%);
+            border-radius: 50%;
+            filter: blur(80px);
+            animation: floatY 8s ease-in-out infinite
+        }
+
+        .hero-glow-2 {
+            position: absolute;
+            bottom: 10%;
+            right: -10%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, var(--glow-secondary), transparent 70%);
+            border-radius: 50%;
+            filter: blur(80px);
+            animation: floatY 6s ease-in-out infinite reverse
+        }
+
+        .hero-content {
+            text-align: center;
+            z-index: 2;
+            max-width: 900px;
+            animation: fadeInUp 1s ease-out
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 50px;
+            font-size: 0.85rem;
+            color: var(--accent);
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px)
+        }
+
+        .hero-badge .dot {
+            width: 8px;
+            height: 8px;
+            background: #00E676;
+            border-radius: 50%;
+            animation: pulse-ring 2s infinite
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            letter-spacing: -1px
+        }
+
+        .hero h1 .gradient-text {
+            background: var(--gradient-3);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradient-shift 4s ease infinite
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 2.5rem;
+            line-height: 1.7
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap
+        }
+
+        .btn {
+            padding: 1rem 2.2rem;
+            border: none;
+            border-radius: 60px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.4s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Inter', sans-serif
+        }
+
+        .btn-primary {
+            background: var(--gradient-1);
+            color: white;
+            box-shadow: 0 4px 20px var(--glow-primary)
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 8px 35px var(--glow-primary)
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1.5px solid var(--card-border)
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary);
+            background: rgba(108, 99, 255, 0.1);
+            transform: translateY(-4px)
+        }
+
+        .hero-visual {
+            margin-top: 4rem;
+            animation: fadeInUp 1.2s ease-out 0.3s both
+        }
+
+        .hero-mockup {
+            width: 100%;
+            max-width: 800px;
+            border-radius: 20px;
+            overflow: hidden;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            box-shadow: 0 20px 80px rgba(0, 0, 0, 0.5)
+        }
+
+        .mockup-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid var(--card-border)
+        }
+
+        .mockup-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%
+        }
+
+        .mockup-dot.red {
+            background: #FF5F56
+        }
+
+        .mockup-dot.yellow {
+            background: #FFBD2E
+        }
+
+        .mockup-dot.green {
+            background: #27C93F
+        }
+
+        .mockup-body {
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem;
+            min-height: 200px
+        }
+
+        .mockup-card {
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 1rem;
+            border: 1px solid var(--card-border);
+            animation: fadeInScale 0.8s ease-out both
+        }
+
+        .mockup-card:nth-child(1) {
+            animation-delay: 0.5s
+        }
+
+        .mockup-card:nth-child(2) {
+            animation-delay: 0.7s
+        }
+
+        .mockup-card:nth-child(3) {
+            animation-delay: 0.9s
+        }
+
+        .mockup-card-img {
+            height: 80px;
+            background: linear-gradient(135deg, rgba(108, 99, 255, 0.2), rgba(0, 210, 255, 0.2));
+            border-radius: 8px;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem
+        }
+
+        .mockup-card-line {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+            margin-bottom: 6px
+        }
+
+        .mockup-card-line.short {
+            width: 60%
+        }
+
+        .features {
+            padding: 100px 20px;
+            position: relative;
+            z-index: 2
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem
+        }
+
+        .section-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            background: rgba(108, 99, 255, 0.1);
+            border: 1px solid rgba(108, 99, 255, 0.2);
+            border-radius: 50px;
+            font-size: 0.8rem;
+            color: var(--primary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1.2rem
+        }
+
+        .section-title {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 800;
+            margin-bottom: 1rem;
+            letter-spacing: -0.5px
+        }
+
+        .section-subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 550px;
+            margin: 0 auto
+        }
+
+        .features-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem
+        }
+
+        .feature-card {
+            padding: 2.5rem;
+            border-radius: 24px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            transition: all 0.5s;
+            position: relative;
+            overflow: hidden
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gradient-1);
+            transform: scaleX(0);
+            transition: transform 0.5s
+        }
+
+        .feature-card:hover::before {
+            transform: scaleX(1)
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(108, 99, 255, 0.3);
+            box-shadow: 0 20px 60px rgba(108, 99, 255, 0.1)
+        }
+
+        .feature-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            color: white
+        }
+
+        .feature-icon.blue {
+            background: var(--gradient-1);
+            box-shadow: 0 8px 25px var(--glow-primary)
+        }
+
+        .feature-icon.pink {
+            background: var(--gradient-2);
+            box-shadow: 0 8px 25px var(--glow-secondary)
+        }
+
+        .feature-icon.cyan {
+            background: linear-gradient(135deg, #00D2FF, #00E676);
+            box-shadow: 0 8px 25px rgba(0, 210, 255, 0.3)
+        }
+
+        .feature-card h3 {
+            font-size: 1.35rem;
+            margin-bottom: 0.8rem;
+            font-weight: 700
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            line-height: 1.7;
+            font-size: 0.95rem
+        }
+
+        .how-it-works {
+            padding: 100px 20px;
+            position: relative;
+            z-index: 2;
+            background: linear-gradient(180deg, transparent, rgba(108, 99, 255, 0.03) 50%, transparent)
+        }
+
+        .steps-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+            position: relative
+        }
+
+        .steps-container::before {
+            content: '';
+            position: absolute;
+            top: 45px;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary), var(--secondary), var(--accent), transparent);
+            opacity: 0.3
+        }
+
+        .step {
+            text-align: center;
+            position: relative;
+            z-index: 1
+        }
+
+        .step-number {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: white
+        }
+
+        .step:nth-child(1) .step-number {
+            background: var(--gradient-1);
+            box-shadow: 0 8px 30px var(--glow-primary)
+        }
+
+        .step:nth-child(2) .step-number {
+            background: var(--gradient-2);
+            box-shadow: 0 8px 30px var(--glow-secondary)
+        }
+
+        .step:nth-child(3) .step-number {
+            background: linear-gradient(135deg, #00D2FF, #00E676);
+            box-shadow: 0 8px 30px rgba(0, 210, 255, 0.3)
+        }
+
+        .step:nth-child(4) .step-number {
+            background: linear-gradient(135deg, #FF8E53, #FFA726);
+            box-shadow: 0 8px 30px rgba(255, 142, 83, 0.3)
+        }
+
+        .step h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700
+        }
+
+        .step p {
+            color: var(--text-muted);
+            font-size: 0.9rem
+        }
+
+        .footer {
+            padding: 60px 20px 30px;
+            border-top: 1px solid var(--card-border);
+            position: relative;
+            z-index: 2
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 3rem
+        }
+
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1rem
+        }
+
+        .footer-section h3 {
+            margin-bottom: 1.2rem;
+            font-weight: 600;
+            font-size: 1rem
+        }
+
+        .footer-section p {
+            color: var(--text-muted);
+            line-height: 1.7;
+            font-size: 0.9rem
+        }
+
+        .footer-links {
+            list-style: none
+        }
+
+        .footer-links li {
+            margin-bottom: 0.8rem
+        }
+
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s
+        }
+
+        .footer-links a:hover {
+            color: var(--primary)
+        }
+
+        .social-links {
+            display: flex;
+            gap: 0.8rem;
+            margin-top: 1.5rem
+        }
+
+        .social-links a {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            transition: all 0.3s;
+            text-decoration: none
+        }
+
+        .social-links a:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-3px)
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 2rem auto 0;
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid var(--card-border);
+            color: var(--text-muted);
+            font-size: 0.85rem
+        }
+
+        /* Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000
+        }
+
+        .modal-content {
+            background: #13162B;
+            border-radius: 24px;
+            padding: 2.5rem;
+            width: 90%;
+            max-width: 440px;
+            animation: fadeInScale 0.35s ease-out;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto
+        }
+
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background: var(--gradient-1)
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem
+        }
+
+        .modal-header h2 {
+            font-size: 1.6rem;
+            font-weight: 700
+        }
+
+        .close-modal {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            transition: all 0.3s
+        }
+
+        .close-modal:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--text-secondary)
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1.5px solid var(--card-border);
+            border-radius: 12px;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s;
+            outline: none
+        }
+
+        .form-group input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--glow-primary)
+        }
+
+        .form-group input::placeholder {
+            color: var(--text-muted)
+        }
+
+        .modal-btn {
+            width: 100%;
+            padding: 0.9rem;
+            background: var(--gradient-1);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            box-shadow: 0 4px 15px var(--glow-primary)
+        }
+
+        .modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--glow-primary)
+        }
+
+        .modal-footer-text {
+            text-align: center;
+            margin-top: 1.2rem;
+            color: var(--text-muted);
+            font-size: 0.9rem
+        }
+
+        .modal-footer-text a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600
+        }
+
+        .modal-footer-text a:hover {
+            color: var(--accent)
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            background: #13162B;
+            border: 1px solid var(--card-border);
+            color: white;
+            font-size: 0.9rem;
+            z-index: 5000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            animation: fadeInDown 0.3s ease-out
+        }
+
+        .toast.success {
+            border-color: #00E676
+        }
+
+        .toast.error {
+            border-color: #FF5252
+        }
+
+        @media(max-width:1024px) {
+            .steps-container {
+                grid-template-columns: repeat(2, 1fr)
+            }
+
+            .steps-container::before {
+                display: none
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr 1fr
+            }
+        }
+
+        @media(max-width:768px) {
+            .nav-links {
+                display: none
+            }
+
+            .nav-links.open {
+                display: flex;
+                flex-direction: column;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(11, 14, 23, 0.98);
+                backdrop-filter: blur(20px);
+                justify-content: center;
+                align-items: center;
+                gap: 2rem;
+                z-index: 999
+            }
+
+            .mobile-toggle {
+                display: block;
+                z-index: 1001
+            }
+
+            .mockup-body {
+                grid-template-columns: 1fr
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 2rem
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--dark-bg)
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(108, 99, 255, 0.4);
+            border-radius: 4px
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="particles-canvas"></canvas>
+
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="logo" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+                <div class="logo-icon"><i class="fas fa-wand-magic-sparkles"></i></div>
+                <span class="logo-text">Preview AI</span>
+            </div>
+            <button class="mobile-toggle" id="mobileToggle" onclick="toggleMobileMenu()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="nav-links" id="navLinks">
+                <a href="#home">Bosh sahifa</a>
+                <a href="#features">Imkoniyatlar</a>
+                <a href="#how-it-works">Qanday ishlaydi</a>
+                <a href="#partners">Hamkorlar</a>
+                <a href="#clients">Mijozlar</a>
+                <a href="#contact-section">Bog'lanish</a>
+                <button class="btn-nav" onclick="showLoginModal()"><i class="fas fa-sign-in-alt"></i> Kirish</button>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero" id="home">
+        <div class="hero-glow-1"></div>
+        <div class="hero-glow-2"></div>
+        <div class="hero-content">
+            <div class="hero-badge"><span class="dot"></span> AI bilan kuchaytirilgan dizayn platformasi</div>
+            <h1>Xonangizni <span class="gradient-text">sun'iy intellekt</span> bilan bezang</h1>
+            <p>AI sizning xonangizga eng mos mebellarni tanlab beradi va xonangizda qanday ko'rinishini oldindan
+                ko'rsatib beradi</p>
+            <div class="cta-buttons">
+                <button class="btn btn-primary" onclick="showRegisterModal()"><i class="fas fa-rocket"></i> Hoziroq
+                    boshlang</button>
+                <button class="btn btn-outline"
+                    onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})"><i
+                        class="fas fa-play-circle"></i> Batafsil ma'lumot</button>
+            </div>
+            <div class="hero-visual">
+                <div class="hero-mockup">
+                    <div class="mockup-header">
+                        <span class="mockup-dot red"></span>
+                        <span class="mockup-dot yellow"></span>
+                        <span class="mockup-dot green"></span>
+                    </div>
+                    <div class="mockup-body">
+                        <div class="mockup-card">
+                            <div class="mockup-card-img">🛋️</div>
+                            <div class="mockup-card-line"></div>
+                            <div class="mockup-card-line short"></div>
+                        </div>
+                        <div class="mockup-card">
+                            <div class="mockup-card-img">🪑</div>
+                            <div class="mockup-card-line"></div>
+                            <div class="mockup-card-line short"></div>
+                        </div>
+                        <div class="mockup-card">
+                            <div class="mockup-card-img">🛏️</div>
+                            <div class="mockup-card-line"></div>
+                            <div class="mockup-card-line short"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features" id="features">
+        <div class="section-header animate-on-scroll">
+            <div class="section-tag"><i class="fas fa-sparkles"></i> Imkoniyatlar</div>
+            <h2 class="section-title">Nima uchun Preview AI?</h2>
+            <p class="section-subtitle">Zamonaviy texnologiyalar bilan xonangiz dizaynini bir pog'onaga ko'taring</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon blue"><i class="fas fa-brain"></i></div>
+                <h3>Aqlli AI Tavsiyalar</h3>
+                <p>Sun'iy intellekt sizning xohishlaringiz va xona uslubingizga mos mebellarni avtomatik tanlab beradi
+                </p>
+            </div>
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon pink"><i class="fas fa-eye"></i></div>
+                <h3>Real Vaqtda Ko'rish</h3>
+                <p>Mebellarni xonangizga qo'yib, qanday ko'rinishini oldindan ko'ring — xarid qilishdan avval</p>
+            </div>
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon cyan"><i class="fas fa-cart-shopping"></i></div>
+                <h3>Oson Xarid Jarayoni</h3>
+                <p>Tanlagan mebellaringizni savatga qo'shing va bir zumda buyurtma bering</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="how-it-works" id="how-it-works">
+        <div class="section-header animate-on-scroll">
+            <div class="section-tag"><i class="fas fa-route"></i> Qadamlar</div>
+            <h2 class="section-title">Qanday ishlaydi?</h2>
+            <p class="section-subtitle">Atigi 4 ta oddiy qadam bilan xonangizni yangilang</p>
+        </div>
+        <div class="steps-container">
+            <div class="step animate-on-scroll">
+                <div class="step-number">1</div>
+                <h3>Xonani suratga oling</h3>
+                <p>Bo'sh xonangizning rasmini yuklang</p>
+            </div>
+            <div class="step animate-on-scroll">
+                <div class="step-number">2</div>
+                <h3>Xohishlaringizni yozing</h3>
+                <p>Uslub, rang va boshqa talablarni kiriting</p>
+            </div>
+            <div class="step animate-on-scroll">
+                <div class="step-number">3</div>
+                <h3>AI tavsiyalarni oling</h3>
+                <p>AI sizga eng mos mebellarni tavsiya qiladi</p>
+            </div>
+            <div class="step animate-on-scroll">
+                <div class="step-number">4</div>
+                <h3>Oldindan ko'ring va xarid qiling</h3>
+                <p>Mebellarni xonangizda ko'rib, xarid qiling</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== HAMKOR MIJOZLARIMIZ ===== -->
+    <section id="partners"
+        style="padding:100px 20px;position:relative;z-index:2;background:linear-gradient(180deg,transparent,rgba(108,99,255,0.04) 50%,transparent)">
+        <div class="section-header animate-on-scroll">
+            <div class="section-tag"><i class="fas fa-handshake"></i> Hamkorlik</div>
+            <h2 class="section-title">Hamkor mijozlarimiz</h2>
+            <p class="section-subtitle">Biz bilan hamkorlik qilayotgan do'kon va kompaniyalar haqida eshiting</p>
+        </div>
+        <div style="max-width:900px;margin:0 auto;">
+            <div class="animate-on-scroll"
+                style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:28px;overflow:hidden;box-shadow:0 20px 80px rgba(0,0,0,0.4);">
+                <div style="position:relative;width:100%;padding-top:56.25%;background:#000;">
+                    <video id="partnerVideo" controls preload="metadata"
+                        style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" poster="">
+                        <source src="/videos/sotuvchiinterview.mp4" type="video/mp4">
+                        Brauzeringiz video formatini qo'llab-quvvatlamaydi.
+                    </video>
+                    <div id="partnerPlayBtn" onclick="playPartnerVideo()" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+                        width:80px;height:80px;background:linear-gradient(135deg,#6C63FF,#00D2FF);
+                        border-radius:50%;display:flex;align-items:center;justify-content:center;
+                        cursor:pointer;box-shadow:0 8px 30px rgba(108,99,255,0.5);transition:all 0.3s;">
+                        <i class="fas fa-play" style="color:white;font-size:1.8rem;margin-left:6px;"></i>
+                    </div>
+                </div>
+                <div
+                    style="padding:1.8rem 2rem;display:flex;align-items:center;gap:1.2rem;border-top:1px solid rgba(255,255,255,0.06);">
+                    <div
+                        style="width:52px;height:52px;background:linear-gradient(135deg,#6C63FF,#00D2FF);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <i class="fas fa-store" style="color:white;font-size:1.2rem;"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:700;font-size:1.1rem;color:#fff;">Liders 111</div>
+                        <div style="color:rgba(255,255,255,0.55);font-size:0.9rem;margin-top:2px;">Mebel do'koni rahbari
+                        </div>
+                    </div>
+                    <div style="margin-left:auto;">
+                        <span
+                            style="background:rgba(0,230,118,0.12);color:#00E676;border:1px solid rgba(0,230,118,0.25);padding:4px 14px;border-radius:50px;font-size:0.8rem;font-weight:600;">
+                            <span
+                                style="display:inline-block;width:7px;height:7px;background:#00E676;border-radius:50%;margin-right:5px;vertical-align:middle;"></span>Faol
+                            hamkor
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== MINNATDOR MIJOZLARIMIZ ===== -->
+    <section id="clients" style="padding:100px 20px;position:relative;z-index:2;">
+        <div class="section-header animate-on-scroll">
+            <div class="section-tag"><i class="fas fa-heart"></i> Minnatdorlik</div>
+            <h2 class="section-title">Minnatdor mijozlarimiz</h2>
+            <p class="section-subtitle">Preview AI xizmatidan foydalanib, xonalarini yangilagan mijozlarimiz fikri</p>
+        </div>
+        <div style="max-width:900px;margin:0 auto;">
+            <div class="animate-on-scroll"
+                style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:28px;overflow:hidden;box-shadow:0 20px 80px rgba(0,0,0,0.4);">
+                <div style="position:relative;width:100%;padding-top:56.25%;background:#000;">
+                    <video id="clientVideo" controls preload="metadata"
+                        style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;">
+                        <source src="/videos/mijozinterview1.mp4" type="video/mp4">
+                        Brauzeringiz video formatini qo'llab-quvvatlamaydi.
+                    </video>
+                    <div id="clientPlayBtn" onclick="playClientVideo()" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+                        width:80px;height:80px;background:linear-gradient(135deg,#FF6B9D,#FF8E53);
+                        border-radius:50%;display:flex;align-items:center;justify-content:center;
+                        cursor:pointer;box-shadow:0 8px 30px rgba(255,107,157,0.5);transition:all 0.3s;">
+                        <i class="fas fa-play" style="color:white;font-size:1.8rem;margin-left:6px;"></i>
+                    </div>
+                </div>
+                <div
+                    style="padding:1.8rem 2rem;display:flex;align-items:center;gap:1.2rem;border-top:1px solid rgba(255,255,255,0.06);">
+                    <div
+                        style="width:52px;height:52px;background:linear-gradient(135deg,#FF6B9D,#FF8E53);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <i class="fas fa-user" style="color:white;font-size:1.2rem;"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:700;font-size:1.1rem;color:#fff;">Baxtli mijozimiz</div>
+                        <div style="color:rgba(255,255,255,0.55);font-size:0.9rem;margin-top:2px;">Preview AI
+                            foydalanuvchisi</div>
+                    </div>
+                    <div style="margin-left:auto;">
+                        <span style="font-size:1.2rem;color:#FFD700;">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== BIZ BILAN BOG'LANISH (SOTUVCHILAR UCHUN) ===== -->
+    <section id="contact-section"
+        style="padding:100px 20px;position:relative;z-index:2;background:linear-gradient(180deg,transparent,rgba(108,99,255,0.05) 50%,transparent);">
+        <div class="section-header animate-on-scroll">
+            <div class="section-tag"><i class="fas fa-rocket"></i> Hamkorlik</div>
+            <h2 class="section-title">Sotuvchimisiz? <span class="gradient-text">Biz bilan boshlang!</span></h2>
+            <p class="section-subtitle">Sotuvchi sifatida ro'yxatdan o'tmagan bo'lsangiz ham — so'rov qoldiring, biz
+                bilan ishlashni boshlashingiz mumkin</p>
+        </div>
+        <div style="max-width:600px;margin:0 auto;" class="animate-on-scroll">
+            <div
+                style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:28px;padding:2.5rem;box-shadow:0 20px 60px rgba(0,0,0,0.3);position:relative;overflow:hidden;">
+                <div
+                    style="position:absolute;top:-60px;right:-60px;width:200px;height:200px;background:radial-gradient(circle,rgba(108,99,255,0.15),transparent 70%);border-radius:50%;">
+                </div>
+                <div
+                    style="position:absolute;bottom:-40px;left:-40px;width:150px;height:150px;background:radial-gradient(circle,rgba(0,210,255,0.1),transparent 70%);border-radius:50%;">
+                </div>
+                <div style="display:flex;align-items:center;gap:14px;margin-bottom:2rem;">
+                    <div
+                        style="width:56px;height:56px;background:linear-gradient(135deg,#6C63FF,#00D2FF);border-radius:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 25px rgba(108,99,255,0.4);">
+                        <i class="fas fa-handshake" style="color:white;font-size:1.4rem;"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:700;font-size:1.15rem;">Hamkorlik so'rovi</div>
+                        <div style="color:rgba(255,255,255,0.5);font-size:0.85rem;">Barcha maydonlarni to'ldiring</div>
+                    </div>
+                </div>
+                <div style="margin-bottom:1.2rem;">
+                    <label
+                        style="display:block;margin-bottom:6px;font-size:0.88rem;font-weight:600;color:rgba(255,255,255,0.7);"><i
+                            class="fas fa-store" style="margin-right:6px;color:#6C63FF;"></i>Mebel do'kon nomi *</label>
+                    <input type="text" id="contactShopName" placeholder="Masalan: Liders Mebel"
+                        style="width:100%;padding:0.85rem 1rem;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:12px;font-size:0.95rem;color:#fff;font-family:'Inter',sans-serif;outline:none;transition:all 0.3s;"
+                        onfocus="this.style.borderColor='#6C63FF';this.style.boxShadow='0 0 0 3px rgba(108,99,255,0.2)'"
+                        onblur="this.style.borderColor='rgba(255,255,255,0.1)';this.style.boxShadow='none'">
+                </div>
+                <div style="margin-bottom:1.2rem;">
+                    <label
+                        style="display:block;margin-bottom:6px;font-size:0.88rem;font-weight:600;color:rgba(255,255,255,0.7);"><i
+                            class="fas fa-user-tie" style="margin-right:6px;color:#6C63FF;"></i>Rahbar FISH (To'liq ism)
+                        *</label>
+                    <input type="text" id="contactOwnerName" placeholder="Masalan: Aliyev Jasur Baxtiyorovich"
+                        style="width:100%;padding:0.85rem 1rem;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:12px;font-size:0.95rem;color:#fff;font-family:'Inter',sans-serif;outline:none;transition:all 0.3s;"
+                        onfocus="this.style.borderColor='#6C63FF';this.style.boxShadow='0 0 0 3px rgba(108,99,255,0.2)'"
+                        onblur="this.style.borderColor='rgba(255,255,255,0.1)';this.style.boxShadow='none'">
+                </div>
+                <div style="margin-bottom:2rem;">
+                    <label
+                        style="display:block;margin-bottom:6px;font-size:0.88rem;font-weight:600;color:rgba(255,255,255,0.7);"><i
+                            class="fas fa-phone" style="margin-right:6px;color:#6C63FF;"></i>Telefon raqami *</label>
+                    <input type="tel" id="contactPhone" placeholder="+998 90 123 45 67"
+                        style="width:100%;padding:0.85rem 1rem;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:12px;font-size:0.95rem;color:#fff;font-family:'Inter',sans-serif;outline:none;transition:all 0.3s;"
+                        onfocus="this.style.borderColor='#6C63FF';this.style.boxShadow='0 0 0 3px rgba(108,99,255,0.2)'"
+                        onblur="this.style.borderColor='rgba(255,255,255,0.1)';this.style.boxShadow='none'">
+                </div>
+                <button onclick="sendContactRequest()" id="contactSubmitBtn"
+                    style="width:100%;padding:1rem;background:linear-gradient(135deg,#6C63FF,#00D2FF);color:white;border:none;border-radius:14px;font-size:1rem;font-weight:700;cursor:pointer;transition:all 0.3s;font-family:'Inter',sans-serif;box-shadow:0 4px 20px rgba(108,99,255,0.4);display:flex;align-items:center;justify-content:center;gap:10px;"
+                    onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 30px rgba(108,99,255,0.5)'"
+                    onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 20px rgba(108,99,255,0.4)'">
+                    <i class="fas fa-paper-plane"></i> So'rov yuborish
+                </button>
+                <div
+                    style="margin-top:1.5rem;padding:1rem;background:rgba(0,210,255,0.06);border:1px solid rgba(0,210,255,0.15);border-radius:12px;display:flex;align-items:flex-start;gap:10px;">
+                    <i class="fas fa-info-circle" style="color:#00D2FF;margin-top:2px;flex-shrink:0;"></i>
+                    <p style="font-size:0.85rem;color:rgba(255,255,255,0.6);line-height:1.6;">So'rovingiz yuborilgandan
+                        so'ng, <strong style="color:rgba(255,255,255,0.85);">24 soat ichida</strong> administrator siz
+                        bilan bog'lanadi va bepul yo'naltiriladi.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <div class="footer-brand">
+                    <div class="logo-icon" style="width:36px;height:36px;font-size:16px;border-radius:10px;"><i
+                            class="fas fa-wand-magic-sparkles"></i></div>
+                    <span style="font-size:20px;font-weight:700;">Preview AI</span>
+                </div>
+                <p>Sun'iy intellekt yordamida xonangizni bezashning eng oson va zamonaviy usuli</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-telegram-plane"></i></a>
+                </div>
+            </div>
+            <div class="footer-section">
+                <h3>Tez havolalar</h3>
+                <ul class="footer-links">
+                    <li><a href="#home">Bosh sahifa</a></li>
+                    <li><a href="#features">Imkoniyatlar</a></li>
+                    <li><a href="#how-it-works">Qanday ishlaydi</a></li>
+                    <li><a href="#partners">Hamkor mijozlar</a></li>
+                    <li><a href="#clients">Minnatdor mijozlar</a></li>
+                    <li><a href="#contact-section">Sotuvchi bo'lish</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Bog'lanish</h3>
+                <ul class="footer-links">
+                    <li><a href="#"><i class="fas fa-envelope"></i> rahmonovsh2805@gmail.com</a></li>
+                    <li><a href="#"><i class="fas fa-phone"></i>+998 94 894 06 28</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Preview AI. Barcha huquqlar himoyalangan.</p>
+        </div>
+    </footer>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Tizimga kirish</h2>
+                <div class="close-modal" onclick="closeModal('loginModal')">&times;</div>
+            </div>
+            <div class="form-group"><label>Username</label><input type="text" id="loginUsername" placeholder="Username">
+            </div>
+            <div class="form-group"><label>Parol</label><input type="password" id="loginPassword" placeholder="Parol">
+            </div>
+            <button class="modal-btn" onclick="login()"><i class="fas fa-sign-in-alt"></i> Kirish</button>
+            <p class="modal-footer-text">Hisobingiz yo'qmi? <a href="#" onclick="switchToRegister()">Ro'yxatdan
+                    o'ting</a></p>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Ro'yxatdan o'tish</h2>
+                <div class="close-modal" onclick="closeModal('registerModal')">&times;</div>
+            </div>
+            <div class="form-group"><label>To'liq ismingiz (FISH) *</label><input type="text" id="regFullName"
+                    placeholder="Ism Familiya Sharif"></div>
+            <div class="form-group"><label>Telefon raqamingiz *</label><input type="tel" id="regPhone"
+                    placeholder="+998 90 123 45 67"></div>
+            <div class="form-group"><label>Username *</label><input type="text" id="regUsername"
+                    placeholder="Username tanlang"></div>
+            <div class="form-group"><label>Parol *</label><input type="password" id="regPassword"
+                    placeholder="Parol yarating"></div>
+            <button class="modal-btn" onclick="register()"><i class="fas fa-user-plus"></i> Ro'yxatdan o'tish</button>
+            <p class="modal-footer-text">Hisobingiz bormi? <a href="#" onclick="switchToLogin()">Kirish</a></p>
+        </div>
+    </div>
+
+    <script>
+        // Particles
+        const canvas = document.getElementById('particles-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        class Particle {
+            constructor() { this.reset() }
+            reset() { this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height; this.size = Math.random() * 2 + 0.5; this.speedX = (Math.random() - 0.5) * 0.4; this.speedY = (Math.random() - 0.5) * 0.4; this.opacity = Math.random() * 0.4 + 0.1 }
+            update() { this.x += this.speedX; this.y += this.speedY; if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset() }
+            draw() { ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fillStyle = `rgba(108,99,255,${this.opacity})`; ctx.fill() }
+        }
+        for (let i = 0; i < 60; i++)particles.push(new Particle());
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw() });
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 120) { ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y); ctx.strokeStyle = `rgba(108,99,255,${0.08 * (1 - dist / 120)})`; ctx.lineWidth = 0.5; ctx.stroke() }
+                }
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        window.addEventListener('scroll', () => { document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50) });
+        const observer = new IntersectionObserver((entries) => { entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible') }) }, { threshold: 0.1 });
+        document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
+
+        function toggleMobileMenu() {
+            const nav = document.getElementById('navLinks'), toggle = document.getElementById('mobileToggle');
+            nav.classList.toggle('open');
+            toggle.innerHTML = nav.classList.contains('open') ? '<i class="fas fa-times"></i>' : '<i class="fas fa-bars"></i>';
+        }
+
+        function showLoginModal() { document.getElementById('navLinks').classList.remove('open'); document.getElementById('loginModal').style.display = 'flex' }
+        function showRegisterModal() { document.getElementById('registerModal').style.display = 'flex' }
+        function closeModal(id) { document.getElementById(id).style.display = 'none' }
+        function switchToRegister() { closeModal('loginModal'); showRegisterModal() }
+        function switchToLogin() { closeModal('registerModal'); showLoginModal() }
+
+        function showToast(message, type = 'success') {
+            const t = document.createElement('div');
+            t.className = `toast ${type}`;
+            t.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${message}`;
+            document.body.appendChild(t);
+            setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateY(-20px)'; t.style.transition = 'all 0.3s'; setTimeout(() => t.remove(), 300) }, 3000);
+        }
+
+        async function register() {
+            const fullName = document.getElementById('regFullName').value.trim();
+            const phone = document.getElementById('regPhone').value.trim();
+            const username = document.getElementById('regUsername').value.trim();
+            const password = document.getElementById('regPassword').value.trim();
+
+            if (!fullName || !phone || !username || !password) {
+                showToast("Barcha maydonlarni to'ldiring!", 'error');
+                return;
+            }
+
+            const res = await fetch('/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, full_name: fullName, phone })
+            });
+            const data = await res.json();
+            if (data.success) {
+                // Avtomatik login
+                const lr = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const ld = await lr.json();
+                if (ld.success) {
+                    window.location.href = ld.redirect;
+                } else {
+                    showToast("Ro'yxatdan o'tdingiz! Kiring.", 'success');
+                    closeModal('registerModal');
+                    showLoginModal();
+                }
+            } else {
+                showToast(data.message, 'error');
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            if (!username || !password) { showToast('Username va parolni kiriting!', 'error'); return }
+            const res = await fetch('/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
+            const data = await res.json();
+            if (data.success) {
+                window.location.href = data.redirect;
+            } else {
+                showToast(data.message, 'error');
+            }
+        }
+
+        document.getElementById('loginPassword').addEventListener('keypress', e => { if (e.key === 'Enter') login() });
+        document.getElementById('regPassword').addEventListener('keypress', e => { if (e.key === 'Enter') register() });
+        window.addEventListener('click', e => { if (e.target.classList.contains('modal')) e.target.style.display = 'none' });
+
+        // Video play tugmalari
+        function playPartnerVideo() {
+            const video = document.getElementById('partnerVideo');
+            const btn = document.getElementById('partnerPlayBtn');
+            video.play();
+            btn.style.opacity = '0';
+            btn.style.pointerEvents = 'none';
+            video.addEventListener('pause', () => { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; }, { once: false });
+            video.addEventListener('ended', () => { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; }, { once: false });
+        }
+        function playClientVideo() {
+            const video = document.getElementById('clientVideo');
+            const btn = document.getElementById('clientPlayBtn');
+            video.play();
+            btn.style.opacity = '0';
+            btn.style.pointerEvents = 'none';
+            video.addEventListener('pause', () => { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; }, { once: false });
+            video.addEventListener('ended', () => { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; }, { once: false });
+        }
+
+        // Hamkorlik so'rovi
+        async function sendContactRequest() {
+            const shopName = document.getElementById('contactShopName').value.trim();
+            const ownerName = document.getElementById('contactOwnerName').value.trim();
+            const phone = document.getElementById('contactPhone').value.trim();
+            if (!shopName || !ownerName || !phone) {
+                showToast("Barcha maydonlarni to'ldiring!", 'error');
+                return;
+            }
+            const btn = document.getElementById('contactSubmitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yuborilmoqda...';
+            try {
+                const res = await fetch('/contact_request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ shop_name: shopName, owner_name: ownerName, phone: phone })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    document.getElementById('contactShopName').value = '';
+                    document.getElementById('contactOwnerName').value = '';
+                    document.getElementById('contactPhone').value = '';
+                } else {
+                    showToast(data.message || 'Xatolik yuz berdi', 'error');
+                }
+            } catch (e) {
+                showToast("Server bilan bog'lanishda xatolik", 'error');
+            }
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> So\'rov yuborish';
+        }
+
+        // Agar session bor bolsa redirect
+        (async () => {
+            try {
+                const r = await fetch('/check_session');
+                if (r.ok) {
+                    const d = await r.json();
+                    if (d.user_type === 'superadmin') window.location.href = '/admin_dashboard';
+                    else if (d.user_type === 'seller') window.location.href = '/seller_dashboard';
+                    else if (d.user_type === 'user') window.location.href = '/user_dashboard';
+                }
+            } catch (e) { }
+        })();
+    </script>
+</body>
+
+</html>

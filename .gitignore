@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+static/uploads/*
+static/furniture/*
+static/receipts/*
+!static/uploads/.gitkeep
+!static/furniture/.gitkeep
+!static/receipts/.gitkeep

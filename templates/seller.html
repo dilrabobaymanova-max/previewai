@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="uz">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview AI - Sotuvchi paneli</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/seller.css">
+</head>
+
+<body>
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <div class="sidebar-logo-icon"><i class="fas fa-couch"></i></div>
+            <span class="sidebar-logo-text">MebelBozor</span>
+        </div>
+        <div class="sidebar-label">Asosiy</div>
+        <div class="nav-item active" onclick="showSection('dashboard',this)"><i class="fas fa-chart-pie"></i> Dashboard
+        </div>
+        <div class="nav-item" onclick="showSection('orders',this)"><i class="fas fa-shopping-bag"></i> Buyurtmalar</div>
+        <div class="sidebar-label">Boshqaruv</div>
+        <div class="nav-item" onclick="showSection('furniture',this)"><i class="fas fa-couch"></i> Mebellarim</div>
+        <div class="nav-item" onclick="showSection('add',this)"><i class="fas fa-plus-circle"></i> Mebel qo'shish</div>
+        <div class="nav-item" onclick="showSection('verify',this)"><i class="fas fa-qrcode"></i> Kod tekshirish</div>
+        <div class="nav-item" onclick="showSection('notifs',this)"><i class="fas fa-bell"></i> Bildirishnomalar</div>
+        <div class="sidebar-footer">
+            <div class="nav-item logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Chiqish</div>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="top-header">
+            <div class="page-title">
+                <h1>Dashboard</h1>
+                <p>Sotuvchi boshqaruv paneli</p>
+            </div>
+            <div class="shop-name-badge"><i class="fas fa-store"></i> <span id="shopNameDisplay">Do'kon</span> | <span
+                    id="sellerName"></span></div>
+        </div>
+
+        <div id="section-dashboard" class="section active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-card-header"><span class="stat-card-title">Jami buyurtmalar</span>
+                        <div class="stat-card-icon blue"><i class="fas fa-shopping-bag"></i></div>
+                    </div>
+                    <div class="stat-number" id="statOrders">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header"><span class="stat-card-title">Sotilgan</span>
+                        <div class="stat-card-icon green"><i class="fas fa-check-circle"></i></div>
+                    </div>
+                    <div class="stat-number" id="statSold">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header"><span class="stat-card-title">Daromad</span>
+                        <div class="stat-card-icon pink"><i class="fas fa-coins"></i></div>
+                    </div>
+                    <div class="stat-number" id="statRevenue" style="font-size:1.3rem">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header"><span class="stat-card-title">5% komissiya</span>
+                        <div class="stat-card-icon orange"><i class="fas fa-percentage"></i></div>
+                    </div>
+                    <div class="stat-number" id="statCommission" style="font-size:1.3rem">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header"><span class="stat-card-title">Oylik sotuvlar</span>
+                        <div class="stat-card-icon blue"><i class="fas fa-calendar"></i></div>
+                    </div>
+                    <div class="stat-number" id="statMonthSold">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header"><span class="stat-card-title">Oylik komissiya</span>
+                        <div class="stat-card-icon orange"><i class="fas fa-money-bill"></i></div>
+                    </div>
+                    <div class="stat-number" id="statMonthCommission" style="font-size:1.3rem">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-orders" class="section">
+            <div class="card">
+                <h2><i class="fas fa-shopping-bag"></i> Buyurtmalar</h2>
+                <p style="color:var(--text-muted); margin-bottom:1rem;">🔴 Kutilmoqda | 🟡 Bog'lanildi | 🟢 Sotildi</p>
+                <div id="ordersContainer"></div>
+            </div>
+        </div>
+
+        <div id="section-furniture" class="section">
+            <div class="card">
+                <h2><i class="fas fa-couch"></i> Mening mebellarim</h2>
+                <div id="furnitureGrid" class="furniture-grid"></div>
+            </div>
+        </div>
+
+        <div id="section-add" class="section">
+            <div class="card">
+                <h2><i class="fas fa-plus-circle"></i> Yangi mebel qo'shish</h2>
+                <form id="furnitureForm" onsubmit="event.preventDefault();addFurniture()">
+                    <div class="form-grid">
+                        <div class="form-group"><label>Mebel nomi *</label><input type="text" name="name" required>
+                        </div>
+                        <div class="form-group"><label>Kategoriya *</label><select name="category" required>
+                                <option value="">Tanlang</option>
+                                <option value="divan">Divan</option>
+                                <option value="stol">Stol</option>
+                                <option value="stul">Stul</option>
+                                <option value="shkaf">Shkaf</option>
+                                <option value="karavot">Karavot</option>
+                            </select></div>
+                        <div class="form-group"><label>Rang</label><input type="text" name="color"></div>
+                        <div class="form-group"><label>Material</label><input type="text" name="material"></div>
+                        <div class="form-group"><label>Uslub</label><input type="text" name="style"></div>
+                        <div class="form-group"><label>O'lcham</label><input type="text" name="size"></div>
+                        <div class="form-group"><label>Narx (so'm) *</label><input type="number" name="price" required>
+                        </div>
+                        <div class="form-group"><label>Rasm *</label><input type="file" name="image" accept="image/*"
+                                required></div>
+                    </div>
+                    <button type="submit" class="btn-primary"><i class="fas fa-plus"></i> Qo'shish</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="section-verify" class="section">
+            <div class="card">
+                <h2><i class="fas fa-qrcode"></i> Kod tekshirish</h2>
+                <div class="verify-box"><input type="text" id="verifyInput" placeholder="PV-XXXXXXXX"><button
+                        class="btn-primary" onclick="verifyCode()">Tekshirish</button></div>
+                <div id="verifyResult"></div>
+            </div>
+        </div>
+
+        <div id="section-notifs" class="section">
+            <div class="card">
+                <h2><i class="fas fa-bell"></i> Bildirishnomalar</h2>
+                <div id="notifsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/seller.js"></script>
+</body>
+
+</html>

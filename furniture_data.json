@@ -1,0 +1,15 @@
+{
+  "a5d1796e-3c93-4200-a8c1-c7766e3edaa4_kokdivan.jpg": {
+    "id": "a5d1796e-3c93-4200-a8c1-c7766e3edaa4_kokdivan.jpg",
+    "name": "Yumshoq divan",
+    "category": "divan",
+    "color": "kok",
+    "material": "mato va yogoch",
+    "style": "zamonaviy klassik",
+    "size": "200x40x50",
+    "price": 2000000.0,
+    "seller": "example",
+    "image_path": "/static/furniture/a5d1796e-3c93-4200-a8c1-c7766e3edaa4_kokdivan.jpg",
+    "status": "sold"
+  }
+}

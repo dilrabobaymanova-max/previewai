@@ -1,0 +1,21 @@
+{
+  "47cbb23c-6ba5-42d1-8d82-bdb150ed4c75": {
+    "order_id": "47cbb23c-6ba5-42d1-8d82-bdb150ed4c75",
+    "unique_code": "PV-740B24E6",
+    "furniture_id": "a5d1796e-3c93-4200-a8c1-c7766e3edaa4_kokdivan.jpg",
+    "furniture_name": "Yumshoq divan",
+    "price": 2000000.0,
+    "buyer_username": "ezoza",
+    "buyer_name": "Shaxzod Rahmonov",
+    "buyer_phone": "+998886115686",
+    "seller_login": "example",
+    "shop_name": "exampledokon",
+    "cashback_amount": 20000.0,
+    "status": "sold",
+    "date": "2026-05-09 03:34:16",
+    "receipt_path": "/static/receipts/receipt_02ba8c68329e439793612bd1912f949a.jpg",
+    "receipt_approved": true,
+    "buyer_contact_info": "",
+    "cashback_paid": false
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "notifications": [
+    {
+      "id": "fb08adfc-2029-4ee2-b940-ff3b4d2fc883",
+      "username": "shaxzod",
+      "message": "🤝 Yangi hamkorlik so'rovi!\nDo'kon nomi: bir nima\nRahbar (FISH): Alibek Alibekov\nTelefon: +998999999999",
+      "type": "partnership",
+      "date": "2026-05-09 22:06:42",
+      "read": false
+    },
+    {
+      "id": "30b728e9-5b0c-4374-8758-eec73837dbae",
+      "username": "ezoza",
+      "message": "Sizning Yumshoq divan uchun chek tasdiqlandi. Cashback uchun aloqa ma'lumotlaringizni yuboring.",
+      "type": "success",
+      "date": "2026-05-09 03:37:23",
+      "read": true
+    },
+    {
+      "id": "09b4b8f2-581e-453e-8cda-19e8ab94c48a",
+      "username": "shaxzod",
+      "message": "Chek yuklandi: Yumshoq divan",
+      "type": "receipt",
+      "date": "2026-05-09 03:36:35",
+      "read": true
+    },
+    {
+      "id": "2c655d8b-97ae-490b-9903-d8d36ee89c5a",
+      "username": "ezoza",
+      "message": "Xaridingiz tasdiqlandi! Chekni yuklab cashback oling. Yumshoq divan",
+      "type": "info",
+      "date": "2026-05-09 03:35:47",
+      "read": true
+    },
+    {
+      "id": "29a6ff71-abc4-47c5-914f-12a7a4609f26",
+      "username": "ezoza",
+      "message": "Sotuvchi siz bilan bog'landi. Yumshoq divan",
+      "type": "info",
+      "date": "2026-05-09 03:35:37",
+      "read": false
+    },
+    {
+      "id": "e36c1eb8-47de-4c85-9a97-d7a3f74d91a0",
+      "username": "shaxzod",
+      "message": "Yangi buyurtma #PV-740B24E6: Yumshoq divan (exampledokon)",
+      "type": "new_order",
+      "date": "2026-05-09 03:34:16",
+      "read": false
+    },
+    {
+      "id": "1909666c-960b-44e9-aaab-bbaaf1e5da79",
+      "username": "example",
+      "message": "Yangi buyurtma! Yumshoq divan - mijoz Shaxzod Rahmonov",
+      "type": "new_order",
+      "date": "2026-05-09 03:34:16",
+      "read": false
+    }
+  ]
+}
