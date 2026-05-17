@@ -128,15 +128,36 @@
     "phone": "",
     "address": ""
   },
-  "example": {
-    "password": "example",
-    "user_type": "seller",
-    "address": ""
-  },
   "ezoza1": {
     "password": "shaxzod",
     "user_type": "user",
     "full_name": "E'zoza Raxmonova",
+    "phone": "+998 94 894 06 28",
+    "address": ""
+  },
+  "aka": {
+    "password": "aka",
+    "user_type": "user",
+    "full_name": "Shaxzod Rahmonov",
+    "phone": "+998 94 894 06 28",
+    "address": ""
+  },
+  "akam": {
+    "password": "akam",
+    "user_type": "seller",
+    "address": ""
+  },
+  "dsadas": {
+    "password": "dadasda",
+    "user_type": "user",
+    "full_name": "daad",
+    "phone": "dasa",
+    "address": ""
+  },
+  "dasdsa": {
+    "password": "asdsadsa",
+    "user_type": "user",
+    "full_name": "adasdsa",
     "phone": "+998 94 894 06 28",
     "address": ""
   }

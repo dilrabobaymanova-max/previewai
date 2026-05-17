@@ -11,5 +11,33 @@
     "seller": "example",
     "image_path": "/static/furniture/a5d1796e-3c93-4200-a8c1-c7766e3edaa4_kokdivan.jpg",
     "status": "sold"
+  },
+  "41b95cec-ea42-43b3-8a11-4c2d348cd1e4": {
+    "id": "41b95cec-ea42-43b3-8a11-4c2d348cd1e4",
+    "name": "Yumshoq divan",
+    "category": "divan",
+    "color": "ko'k",
+    "material": "yog'och va mato",
+    "style": "zamonaviy klassik",
+    "size": "200x40x50",
+    "price": 4000000.0,
+    "seller": "akam",
+    "image_path": "https://res.cloudinary.com/dmncogeyg/image/upload/v1778761923/previewai/furniture/previewai/furniture/41b95cec-ea42-43b3-8a11-4c2d348cd1e4.jpg",
+    "cloudinary_id": "previewai/furniture/41b95cec-ea42-43b3-8a11-4c2d348cd1e4",
+    "status": "available"
+  },
+  "29ee3239-337b-48b1-ba2f-1305241196dd": {
+    "id": "29ee3239-337b-48b1-ba2f-1305241196dd",
+    "name": "Stol 6 ta stul bilan birga",
+    "category": "stol",
+    "color": "oq",
+    "material": "yog'och",
+    "style": "zamonaviy",
+    "size": "200x80x100",
+    "price": 3500000.0,
+    "seller": "akam",
+    "image_path": "https://res.cloudinary.com/dmncogeyg/image/upload/v1778761957/previewai/furniture/previewai/furniture/29ee3239-337b-48b1-ba2f-1305241196dd.png",
+    "cloudinary_id": "previewai/furniture/29ee3239-337b-48b1-ba2f-1305241196dd",
+    "status": "available"
   }
 }

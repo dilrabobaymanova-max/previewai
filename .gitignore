@@ -2,9 +2,18 @@
 __pycache__/
 *.pyc
 *.pyo
-static/uploads/*
-static/furniture/*
-static/receipts/*
-!static/uploads/.gitkeep
-!static/furniture/.gitkeep
-!static/receipts/.gitkeep
+venv/
+
+# JSON data fayllar (GitHub ga yuklanmasligi kerak)
+users.json
+furniture_data.json
+orders.json
+notifications.json
+sellers.json
+misol.json
+*.json
+
+# Yuklangan rasmlar
+static/rooms/
+static/previews/
+static/furniture/

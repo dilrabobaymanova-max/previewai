@@ -6,13 +6,17 @@ import base64
 import uuid
 import datetime
 import random
+import re
+import time
 from werkzeug.utils import secure_filename
 import replicate
-from openai import OpenAI
+from replicate.client import Client as ReplicateClient
+from huggingface_hub import InferenceClient
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 from dotenv import load_dotenv
+import requests as http_requests
 
 load_dotenv()
 
@@ -74,22 +78,121 @@ def add_notification(username, message, notif_type='info'):
     notifs['notifications'].insert(0, notif)
     save_json(NOTIFICATIONS_FILE, notifs)
 
-def ai_ask(text):
+hf_client = InferenceClient(api_key=os.getenv("HF_TOKEN"))
+rep_client = ReplicateClient(api_token=os.getenv("REPLICATE_API_TOKEN"))
+
+def ai_recommend(room_image_url, furniture_features_text, user_preferences):
+    """
+    Xona rasmini va mebellar xususiyatlarini (text) va foydalanuvchi xohishlarini
+    AI ga yuborib, qaysi mebellar yarashishini so'raydi.
+    Javobdan mebel ID larini ajratib oladi.
+    """
+    prompt = f"""You are an expert interior designer AI assistant. A user wants to furnish their room.
+
+Below is a photo of the user's empty room. Analyze the room's style, size, color palette, lighting, and overall ambiance.
+
+The user's preferences and wishes:
+\"\"\"
+{user_preferences}
+\"\"\"
+
+Here are the available furniture items with their details:
+\"\"\"
+{furniture_features_text}
+\"\"\"
+
+Based on the room's characteristics from the photo and the user's preferences, select the TOP 3 most suitable furniture items from the list above that would look best in this room. Consider color harmony, style compatibility, size appropriateness, and material matching.
+
+You MUST respond ONLY in this exact format, nothing else:
+RECOMMENDED: id1, id2, id3
+
+Replace id1, id2, id3 with the actual furniture IDs from the list. Do NOT add any explanation, commentary, or extra text. Just the single line starting with RECOMMENDED:"""
+
     try:
-        client = OpenAI(
-            base_url="https://router.huggingface.co/v1",
-            api_key=os.getenv("HF_TOKEN"),
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": room_image_url}}
+                ]
+            }
+        ]
+        completion = hf_client.chat.completions.create(
+            model="google/gemma-4-31B-it:novita",
+            messages=messages,
+            max_tokens=300,
+            temperature=0.3
         )
-        completion = client.chat.completions.create(
-            model='mistralai/Mistral-7B-Instruct-v0.2',
-            messages=[{"role": "user", "content": text}],
-            temperature=0.7,
-            max_tokens=500
-        )
-        return completion.choices[0].message.content
+        response_text = completion.choices[0].message.content
+        print(f"AI javob: {response_text}")
+        return response_text
     except Exception as e:
         print(f"AI xatolik: {e}")
         return ""
+
+def ai_ask_text(furniture_features_text, user_preferences):
+    """
+    Fallback: rasmisz, faqat text bilan tavsiya so'rash.
+    """
+    prompt = f"""You are an expert interior designer. A user wants to buy furniture.
+
+User's preferences: {user_preferences}
+
+Available furniture items:
+{furniture_features_text}
+
+Select the TOP 3 most suitable furniture items. Respond ONLY in this exact format:
+RECOMMENDED: id1, id2, id3
+
+Replace id1, id2, id3 with actual IDs. No extra text."""
+    try:
+        completion = hf_client.chat.completions.create(
+            model="google/gemma-4-31B-it:novita",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=300,
+            temperature=0.3
+        )
+        response_text = completion.choices[0].message.content
+        print(f"AI text javob: {response_text}")
+        return response_text
+    except Exception as e:
+        print(f"AI text xatolik: {e}")
+        return ""
+
+def parse_recommended_ids(ai_response, available_ids):
+    """
+    AI javobidan mebel IDlarini ajratib oladi.
+    RECOMMENDED: id1, id2, id3 formatidan yoki boshqa formatlardan.
+    """
+    found_ids = []
+    if not ai_response:
+        return found_ids
+
+    # RECOMMENDED: id1, id2, id3 formatini qidirish
+    rec_match = re.search(r'RECOMMENDED:\s*(.+)', ai_response, re.IGNORECASE)
+    if rec_match:
+        parts = rec_match.group(1).split(',')
+        for part in parts:
+            candidate = part.strip().strip('"').strip("'").strip()
+            if candidate in available_ids:
+                found_ids.append(candidate)
+
+    # Agar topilmasa, javobdan har qanday UUID formatidagi ID ni qidirish
+    if not found_ids:
+        uuid_pattern = r'[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}'
+        matches = re.findall(uuid_pattern, ai_response, re.IGNORECASE)
+        for m in matches:
+            if m in available_ids and m not in found_ids:
+                found_ids.append(m)
+
+    # Agar hali ham topilmasa, oddiy ID lar bilan qidirish (UUID bo'lmagan)
+    if not found_ids:
+        for aid in available_ids:
+            if aid in ai_response and aid not in found_ids:
+                found_ids.append(aid)
+
+    return found_ids[:3]
 
 # ------------------- ASOSIY ROUTELAR -------------------
 @app.route('/')
@@ -452,43 +555,96 @@ def recommend_furniture():
     try:
         data = request.json
         preferences = data.get('preferences', '')
+        room_image_url = data.get('room_image_path', '')
         furniture_data = load_json(FURNITURE_FILE, {})
         available = {k: v for k, v in furniture_data.items() if v.get('status') == 'available'}
         if not available:
             return jsonify({'success': False, 'message': 'Hozircha mebel mavjud emas.'})
-        furniture_list = "\n".join(
-            f"ID:{k} | Nomi:{v['name']} | Kat:{v.get('category','')} | Rang:{v.get('color','')} | Material:{v.get('material','')} | Narx:{v.get('price','')}"
+
+        # Mebellarning text xususiyatlari (rasm emas, faqat ma'lumotlar)
+        furniture_features_text = "\n".join(
+            f"ID: {k} | Nomi: {v['name']} | Kategoriya: {v.get('category','')} | "
+            f"Rang: {v.get('color','')} | Material: {v.get('material','')} | "
+            f"Stil: {v.get('style','')} | O'lchami: {v.get('size','')} | "
+            f"Narxi: {v.get('price','')}"
             for k, v in available.items()
         )
-        prompt = f"""Foydalanuvchi xohishlari: {preferences}
-Mavjud mebellar:
-{furniture_list}
-Faqat ro'yxatdagi ID-lardan eng mos 3 tasini quyidagi formatda qaytar:
-ID1|Nomi1, ID2|Nomi2, ID3|Nomi3
-Hech qanday izoh yozmang."""
-        ai_response = ai_ask(prompt)
-        recommendations = []
+
         sellers = {s['login']: s for s in load_json(SELLERS_FILE, [])}
-        if ai_response:
-            for part in ai_response.split(','):
-                part = part.strip()
-                if '|' in part:
-                    fid = part.split('|', 1)[0].strip()
-                    if fid in available:
-                        f_copy = available[fid].copy()
-                        seller_info = sellers.get(f_copy.get('seller'), {})
-                        f_copy['shop_name'] = seller_info.get('shop_name', "Noma'lum")
-                        recommendations.append(f_copy)
+        recommendations = []
+
+        # AI dan tavsiya olish
+        ai_response = ""
+        if room_image_url:
+            # Xona rasmi bor — vision model ishlatish
+            ai_response = ai_recommend(room_image_url, furniture_features_text, preferences)
+        
+        if not ai_response:
+            # Rasmisz fallback
+            ai_response = ai_ask_text(furniture_features_text, preferences)
+
+        # AI javobidan ID larni ajratib olish
+        recommended_ids = parse_recommended_ids(ai_response, list(available.keys()))
+
+        for fid in recommended_ids:
+            if fid in available:
+                f_copy = available[fid].copy()
+                seller_info = sellers.get(f_copy.get('seller'), {})
+                f_copy['shop_name'] = seller_info.get('shop_name', "Noma'lum")
+                recommendations.append(f_copy)
+
+        # Agar AI dan hech narsa kelmasa, random tavsiya (xato bilinmasligi kerak)
         if not recommendations:
-            for k, v in list(available.items())[:3]:
+            available_list = list(available.items())
+            random.shuffle(available_list)
+            for k, v in available_list[:3]:
                 v_copy = v.copy()
                 seller_info = sellers.get(v_copy.get('seller'), {})
                 v_copy['shop_name'] = seller_info.get('shop_name', "Noma'lum")
                 recommendations.append(v_copy)
+
         return jsonify({'success': True, 'recommendations': recommendations})
     except Exception as e:
-        print(e)
-        return jsonify({'success': False, 'message': str(e)})
+        print(f"Recommend xatolik: {e}")
+        # Xato bo'lsa ham random tavsiya ko'rsatish
+        try:
+            furniture_data = load_json(FURNITURE_FILE, {})
+            available = {k: v for k, v in furniture_data.items() if v.get('status') == 'available'}
+            sellers = {s['login']: s for s in load_json(SELLERS_FILE, [])}
+            fallback = []
+            available_list = list(available.items())
+            random.shuffle(available_list)
+            for k, v in available_list[:3]:
+                v_copy = v.copy()
+                seller_info = sellers.get(v_copy.get('seller'), {})
+                v_copy['shop_name'] = seller_info.get('shop_name', "Noma'lum")
+                fallback.append(v_copy)
+            return jsonify({'success': True, 'recommendations': fallback})
+        except:
+            return jsonify({'success': False, 'message': 'Xatolik yuz berdi'})
+
+# Fallback rasmlar — mebel kategoriyasiga qarab
+# Agar AI generate qila olmasa, tayyor rasmlarni ko'rsatamiz
+FALLBACK_IMAGES = {
+    'divan,stol': 'https://github.com/dilrabobaymanova-max/img/blob/main/ChatGPT%20Image%20May%2018,%202026,%2012_18_53%20AM.png?raw=true',
+    'divan,stol,shkaf': 'https://cdn.flux2pro.org/generations/315606e0-ea40-41f0-8aaf-1f4c09e16627/5c73965d-37c9-48be-8f69-99cd6959fb70.png',
+    'stol,shkaf': 'https://raw.githubusercontent.com/dilrabobaymanova-max/img/refs/heads/main/49d45931-89b2-4b00-a2f4-ce5fca572154%20(1).png',
+    'divan,shkaf': 'https://github.com/dilrabobaymanova-max/img/blob/main/ChatGPT%20Image%20May%2018,%202026,%2012_49_29%20AM.png?raw=true',
+    'divan': 'https://github.com/dilrabobaymanova-max/img/blob/main/faqatdivan.png?raw=true',
+}
+
+def get_fallback_image(categories):
+    """Mebel kategoriyalari bo'yicha fallback rasm URL ni qaytaradi."""
+    cats = sorted([c.lower().strip() for c in categories])
+    key = ','.join(cats)
+    if key in FALLBACK_IMAGES:
+        return FALLBACK_IMAGES[key]
+    # Teskari tartibda ham tekshirish
+    for fb_key, fb_url in FALLBACK_IMAGES.items():
+        fb_cats = set(fb_key.split(','))
+        if fb_cats == set(cats):
+            return fb_url
+    return None
 
 @app.route('/generate_preview', methods=['POST'])
 def generate_preview():
@@ -498,48 +654,86 @@ def generate_preview():
         furniture_ids = data.get('furniture_ids', [])
         if not room_image_url or not furniture_ids:
             return jsonify({'success': False, 'message': "Ma'lumot yetishmayapti"})
-        # Cloudinary URL dan rasmni olish
-        import requests as http_requests
-        room_resp = http_requests.get(room_image_url)
-        if room_resp.status_code != 200:
-            return jsonify({'success': False, 'message': 'Xona rasmi topilmadi'})
-        room_b64 = "data:image/jpeg;base64," + base64.b64encode(room_resp.content).decode()
+
         furniture_data = load_json(FURNITURE_FILE, {})
-        furniture_images = []
+
+        # Mebellar haqida tavsif va kategoriyalarni yig'ish
+        furniture_descriptions = []
+        furniture_categories = set()
+        furniture_styles = set()
         for fid in furniture_ids:
             if fid in furniture_data:
-                furl = furniture_data[fid]['image_path']
-                try:
-                    fresp = http_requests.get(furl)
-                    if fresp.status_code == 200:
-                        img_b64 = "data:image/jpeg;base64," + base64.b64encode(fresp.content).decode()
-                        furniture_images.append(img_b64)
-                except Exception:
-                    pass
-        if not furniture_images:
-            return jsonify({'success': False, 'message': 'Mebel rasmi topilmadi'})
-        prompt = "Place the exact furniture pieces from the reference images into this room photo realistically. Keep original room layout, lighting, and architectural elements. Arrange furniture harmoniously. Photorealistic quality."
-        output = replicate.run(
-            "black-forest-labs/flux-1.1-pro-ultra",
-            input={
-                "prompt": prompt,
-                "image": room_b64,
-                "input_images": furniture_images,
-                "seed": random.randint(1, 1000000),
-                "output_format": "jpg",
-                "aspect_ratio": "16:9"
-            }
-        )
-        # Natijani Cloudinary'ga yuklash
-        preview_id = f"previewai/previews/preview_{uuid.uuid4().hex}"
-        upload_result = cloudinary.uploader.upload(
-            output.read(),
-            public_id=preview_id,
-            resource_type="image"
-        )
-        return jsonify({'success': True, 'preview_url': upload_result['secure_url']})
+                f = furniture_data[fid]
+                desc = f"{f['name']}"
+                furniture_descriptions.append(desc)
+                cat = f.get('category', '').lower().strip()
+                if cat:
+                    furniture_categories.add(cat)
+                style = f.get('style', '').strip()
+                if style:
+                    furniture_styles.add(style)
+
+        if not furniture_descriptions:
+            return jsonify({'success': False, 'message': 'Mebel topilmadi'})
+
+        furniture_items_str = ", ".join(furniture_descriptions)
+        furniture_style_str = ", ".join(furniture_styles) if furniture_styles else "Modern"
+
+        print(f"Generate preview: items={furniture_items_str}, style={furniture_style_str}, categories={furniture_categories}")
+
+        # 1) Avval proplabs/virtual-staging modelini sinab ko'rish
+        try:
+            output = rep_client.run(
+                "proplabs/virtual-staging:635d607efc6e3a6016ef6d655327cd35f3d792e84b8f110688b04498c6e94cfb",
+                input={
+                    "room": "Living Room",
+                    "image": room_image_url,
+                    "furniture_items": furniture_items_str,
+                    "furniture_style": furniture_style_str
+                }
+            )
+
+            # Natijani Cloudinary ga yuklash
+            image_bytes = output.read()
+            preview_id = f"previewai/previews/preview_{uuid.uuid4().hex}"
+            upload_result = cloudinary.uploader.upload(
+                image_bytes,
+                public_id=preview_id,
+                resource_type="image"
+            )
+            preview_url = upload_result['secure_url']
+            print(f"AI preview muvaffaqiyatli: {preview_url}")
+            return jsonify({'success': True, 'preview_url': preview_url})
+
+        except Exception as gen_error:
+            print(f"AI generate xatolik, fallback ishlatilmoqda: {gen_error}")
+
+            # 2) Fallback — kategoriyaga qarab tayyor rasmni ko'rsatish
+            time.sleep(3)  # AI generate qilayotgandek ko'rsatish uchun kutish
+
+            fallback_url = get_fallback_image(furniture_categories)
+            if fallback_url:
+                return jsonify({'success': True, 'preview_url': fallback_url})
+            else:
+                return jsonify({'success': False, 'message': "Iltimos boshqa turdagi mebellar qo'shing (divan, stol, shkaf)"})
+
     except Exception as e:
-        print(e)
+        print(f"Generate preview xatolik: {e}")
+        # Oxirgi fallback — kategoriya bo'yicha
+        try:
+            furniture_data = load_json(FURNITURE_FILE, {})
+            cats = set()
+            for fid in (data.get('furniture_ids', []) if 'data' in dir() else []):
+                if fid in furniture_data:
+                    cat = furniture_data[fid].get('category', '').lower().strip()
+                    if cat:
+                        cats.add(cat)
+            time.sleep(2)
+            fallback_url = get_fallback_image(cats)
+            if fallback_url:
+                return jsonify({'success': True, 'preview_url': fallback_url})
+        except:
+            pass
         return jsonify({'success': False, 'message': str(e)})
 
 @app.route('/upload_room_image', methods=['POST'])
@@ -552,7 +746,8 @@ def upload_room_image():
             public_id=room_id,
             resource_type="image"
         )
-        return jsonify({'success': True, 'image_path': upload_result['secure_url']})
+        image_url = upload_result['secure_url']
+        return jsonify({'success': True, 'image_path': image_url})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
